@@ -1,29 +1,15 @@
 #!/usr/bin/python3
-"""
-    pack webstatic module fabric
-"""
-import time
-# from fabric.context_managers import cd
 from fabric.api import local
-from fabric.api import get
-from fabric.api import put
-from fabric.api import reboot
-from fabric.api import run
-from fabric.api import sudo
-import os.path
+from datetime import datetime
 
 
 def do_pack():
-    """ pack my static"""
+    """ Generate a tar archives """
+    date_recent = datetime.now().strftime("%Y%m%d%H%M%S")
+    path_ruth = "versions/web_static_{}.tgz".format(date_recent)
     try:
-        if not os.path.exists('versions'):
-            l = local("mkdir -p versions")
-        n = "versions/web_static_{}.tgz".\
-            format(time.strftime("%Y%m%d%H%M%S", time.gmtime()))
-        o = local("tar -cvzf {} web_static".format(n))
-        # x = local("mv {} versions".format(n))
-        # p = local("pwd {}".format(n))
-        # return 'versions/{}'.format(n)
-        return n
+        local("mkdir -p versions")
+        local("tar -czvf {} web_static".format(path_ruth))
+        return path_ruth
     except:
         return None

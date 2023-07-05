@@ -1,36 +1,45 @@
 #!/usr/bin/python3
-"""
-    deploy static
-"""
-# import time
-# from fabric.context_managers import cd
-from fabric.api import local
-from fabric.api import get
-from fabric.api import put
-from fabric.api import reboot
-from fabric.api import run
-from fabric.api import sudo
-from fabric.api import env
-env.hosts = ['34.75.49.246', '104.196.144.160']
+from fabric.api import *
+from datetime import datetime
+import os.path
+import re
+import os
+env.hosts = ['34.74.176.42', '34.75.43.152']
+
+
+def do_pack():
+        """ Generate a tar archives """
+        date_recent = datetime.now().strftime("%Y%m%d%H%M%S")
+        path_ruth = "versions/web_static_{}.tgz".format(date_recent)
+        try:
+                local("mkdir -p versions")
+                local("tar -czvf {} web_static".format(path_ruth))
+                return path_ruth
+        except:
+                return None
 
 
 def do_deploy(archive_path):
-    """ deploy my archive tgz into my servers """
-    try:
-        put(archive_path, '/tmp/')
-        c1 = 'mkdir -p /data/web_static/releases/{}/'
-        run(c1.format(archive_path[9:-4]))
-        c2 = 'tar -xzf /tmp/{} -C /data/web_static/releases/{}/'
-        run(c2.format(archive_path[9:], archive_path[9:-4]))
-        run('rm /tmp/{}'.format(archive_path[9:]))
-        c3 = 'mv /data/web_static/releases/{}/web_static/* \
-              /data/web_static/releases/{}/'
-        run(c3.format(archive_path[9:-4], archive_path[9:-4]))
-        c4 = 'rm -rf  /data/web_static/releases/{}/web_static/'
-        run(c4.format(archive_path[9:-4]))
-        run('rm -rf /data/web_static/current')
-        c5 = 'ln -s /data/web_static/releases/{}/ {}'
-        run(c5.format(archive_path[9:-4], '/data/web_static/current'))
-        return True
-    except:
-        return False
+        try:
+                if not os.path.exists(archive_path):
+                        return False
+                put(archive_path, "/tmp/")
+                fileComp = archive_path.split("/")[1].split(".")[0]
+                path = "/data/web_static/releases/{}".format(fileComp)
+                tgzFile = fileComp + '.tgz'
+                print(fileComp)
+                print(path)
+                print(tgzFile)
+                
+                run("mkdir -p {}".format(path))
+                run("tar -xvzf /tmp/{}.tgz -C {}".format(fileComp, path))
+                run("sudo rm /tmp/{}.tgz".format(fileComp))
+                run("sudo rm /data/web_static/current")
+                run("sudo ln -sf /data/web_static/releases/{}\
+                /data/web_static/current".format(fileComp))
+                run("sudo mv /data/web_static/releases/{}/web_static/* \
+                /data/web_static/releases/{}/".format(fileComp, fileComp))
+                run("rm -rf /data/web_static/releases/{}/web_static".format(fileComp))
+                return True
+        except:
+                return False
